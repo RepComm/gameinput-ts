@@ -1,0 +1,1 @@
+npx typescript src/* --declaration --allowJs --emitDeclarationOnly --outDir lib

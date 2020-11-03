@@ -1,0 +1,17 @@
+{
+  "jump":{
+    "keys":[
+      " "
+    ],
+    "gpBtns":[
+      0
+    ],
+    "gpAxes":[
+      {
+        "axisId":0,
+        "rule":0,
+        "compareValue":0.5
+      }
+    ]
+  }
+}
