@@ -1,17 +1,28 @@
 
 import { Input, on, off } from "./input.js";
 
+/**Defines a single input mapping (button as in <gameinput>.getButton)
+ */
 export interface InputBindingJson {
+  /**keyboard keys
+   * see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
+   */
   keys: string[];
+  /**Touch rectangles*/
   rects: TouchRectJson[];
+  /**Gamepad buttons*/
   gpBtns: number[];
+  /**Gamepad axis rules*/
   gpAxes: AxisRuleJson[];
 }
 
+/**A collection of InputBindingJson*/
 export interface InputBindingsJson {
   [key: string]: InputBindingJson;
 }
 
+/**A single input mapping (button as in <gameinput>.getButton)
+ */
 export class InputBinding {
   private keys: Set<string>;
   private rects: Set<TouchRect>;
@@ -169,7 +180,7 @@ export class InputBinding {
 }
 
 export class GamePadManager {
-  static SINGLETON: GamePadManager | undefined = undefined;
+  static SINGLETON: GamePadManager;
   primary: Gamepad | undefined;
   allGamePadsFix: Array<Gamepad>;
 
@@ -254,23 +265,30 @@ export class GamePadManager {
   }
 }
 
+/**
+ * 
+ */
 export interface RendererInterface {
   rect: { width: number, height: number };
   center: { x: number, y: number };
   zoom?: number;
 }
 
+/**Defines an axis rule to activate a button/input mapping
+ */
 export interface AxisRuleJson {
   axisId: number,
   rule: number,
   compareValue: number
 }
 
+/**An axis rule to activate a button/input mapping
+ */
 export class AxisRule {
-  static GREATER_THAN = 0;
-  static LESS_THAN = 1;
+  static GREATER_THAN;
+  static LESS_THAN;
 
-  axisId = 0;
+  axisId: number;
   rule: number;
   compareValue: number;
 
@@ -317,7 +335,11 @@ export class AxisRule {
     };
   }
 }
+AxisRule.GREATER_THAN = 0;
+AxisRule.LESS_THAN = 1;
 
+/**Defines a touch rectangle that activates a button/input mapping
+ */
 export interface TouchRectJson {
   top: number;
   left: number;
@@ -325,6 +347,8 @@ export interface TouchRectJson {
   height: number;
 }
 
+/**A touch rectangle that activates a button/input mapping
+ */
 export class TouchRect {
   top: number;
   left: number;
@@ -369,7 +393,7 @@ export class TouchRect {
 }
 
 export class GameInput {
-  static SINGLETON: GameInput = undefined;
+  static SINGLETON: GameInput;
   raw: Input;
   private inputBindings: Map<string, InputBinding>;
   renderer: RendererInterface;
@@ -390,9 +414,14 @@ export class GameInput {
     this.gamePadManager = GamePadManager.get();
   }
 
+  /**Necessary for using pointer coordinates that are relative to a defined area
+   * @param renderer
+   */
   setRenderer(renderer: RendererInterface) {
     this.renderer = renderer;
   }
+  /**Returns the singleton GameInput
+   */
   static get(): GameInput {
     if (!GameInput.SINGLETON) {
       new GameInput();
@@ -418,6 +447,10 @@ export class GameInput {
     this.setBinding(name, binding);
     return this;
   }
+  /**Creates a binding and returns it
+   * Handy for chaining commands
+   * @param name 
+   */
   createBinding(name: string): InputBinding {
     let result = new InputBinding();
     this.addBinding(name, result);
@@ -430,75 +463,139 @@ export class GameInput {
     if (!this.hasBinding(name)) throw `No binding found for ${name}`;
     return this.inputBindings.get(name);
   }
+  /**Returns true if the given input binding found
+   * one of its inputs activated
+   * @param name 
+   */
   getButton(name: string): boolean {
     return this.getBinding(name).test(this);
   }
+  /**Static version, no functionality change, see <gameinput>.getButton
+   * @param name 
+   */
   static getButton(name: string): boolean {
     return GameInput.SINGLETON.getButton(name);
   }
+  /**Raw screen x
+   */
   get pointerScreenX(): number {
     return this.raw.pointer.x;
   }
+  /**Raw screen x
+   */
   static get pointerScreenX(): number {
     return GameInput.SINGLETON.pointerScreenX;
   }
+  /**Raw screen y
+   */
   get pointerScreenY(): number {
     return this.raw.pointer.y;
   }
+  /**Raw screen y
+   */
   static get pointerScreenY(): number {
     return GameInput.SINGLETON.pointerScreenY;
   }
+  /**Handy for 2d apps, subtracts the mapped RendererInterface (see <gameinput>.setRenderer) center coordinates
+   */
   get pointerWorldX(): number {
     return this.pointerScreenCenteredX - this.renderer.center.x;
   }
+  /**Handy for 2d apps, subtracts the mapped RendererInterface (see <gameinput>.setRenderer) center coordinates
+   */
   static get pointerWorldX(): number {
     return GameInput.SINGLETON.pointerWorldX;
   }
+  /**Handy for 2d apps, subtracts the mapped RendererInterface (see <gameinput>.setRenderer) center coordinates
+   */
   get pointerWorldY(): number {
     return this.pointerScreenCenteredY - this.renderer.center.y;
   }
+  /**Handy for 2d apps, subtracts the mapped RendererInterface (see <gameinput>.setRenderer) center coordinates
+   */
   static get pointerWorldY(): number {
     return GameInput.SINGLETON.pointerWorldY;
   }
+  /**Handy for 2d apps
+   * Coordinates centered on the RendererInterface (see <gameinput>.setRenderer)
+   * adjusted for zoom if present
+   */
   get pointerScreenCenteredX(): number {
     return (this.pointerScreenX - (this.renderer.rect.width / 2)) / (this.renderer.zoom || 1);
   }
+  /**Handy for 2d apps
+   * Coordinates centered on the RendererInterface (see <gameinput>.setRenderer)
+   * adjusted for zoom if present
+   */
   static get pointerScreenCenteredX(): number {
     return GameInput.SINGLETON.pointerScreenCenteredX;
   }
+  /**Handy for 2d apps
+   * Coordinates centered on the RendererInterface (see <gameinput>.setRenderer)
+   * adjusted for zoom if present
+   */
   get pointerScreenCenteredY(): number {
     return (this.pointerScreenY - (this.renderer.rect.height / 2)) / (this.renderer.zoom || 1);
   }
+  /**Handy for 2d apps
+   * Coordinates centered on the RendererInterface (see <gameinput>.setRenderer)
+   * adjusted for zoom if present
+   */
   static get pointerScreenCenteredY(): number {
     return GameInput.SINGLETON.pointerScreenCenteredY;
   }
+  /**Primary mouse/touch
+   * TODO - allow gamepad mapping to this
+   */
   get pointerPrimary(): boolean {
     return this.raw.pointer.leftDown;
   }
+  /**Primary mouse/touch
+   */
   static get pointerPrimary(): boolean {
     return GameInput.SINGLETON.pointerPrimary;
   }
+  /**Secondary mouse/touch
+   * TODO - allow gamepad mapping to this
+   */
   get pointerSecondary(): boolean {
     return this.raw.pointer.rightDown;
   }
+  /**Secondary mouse/touch
+   */
   static get pointerSecondary(): boolean {
     return GameInput.SINGLETON.pointerSecondary;
   }
+  /**Normalized (mapped 0 thru 1) coordinates
+   * See <gameinput>.setRenderer
+   */
   get pointerNormalizedX(): number {
     return this.raw.pointer.x / this.renderer.rect.width;
   }
+  /**Normalized (mapped 0 thru 1) coordinates
+   * See <gameinput>.setRenderer
+   */
   static get pointerNormalizedX(): number {
     return GameInput.SINGLETON.pointerNormalizedX;
   }
+  /**Normalized (mapped 0 thru 1) coordinates
+   * See <gameinput>.setRenderer
+   */
   get pointerNormalizedY(): number {
     return this.raw.pointer.y / this.renderer.rect.height;
   }
+  /**Normalized (mapped 0 thru 1) coordinates
+   * See <gameinput>.setRenderer
+   */
   static get pointerNormalizedY(): number {
     return GameInput.SINGLETON.pointerNormalizedY;
   }
   getGamePadManager(): GamePadManager {
     return this.gamePadManager;
   }
+  /**Create a serializable representation of the current mappings
+   * Recursively copies all axis, button, key mappings
+   */
   bindingsToJson(): InputBindingsJson {
     let result = {};
     this.inputBindings.forEach((bind, name) => {
@@ -506,6 +603,10 @@ export class GameInput {
     });
     return result;
   }
+  /**Import mappings from serialized json representation
+   * @param defs 
+   * @param overwrite 
+   */
   addBindingsFromJson(defs: InputBindingsJson, overwrite: boolean = false): this {
     let keys = Object.keys(defs);
     for (let key of keys) {
