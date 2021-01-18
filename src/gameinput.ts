@@ -1,5 +1,5 @@
 
-import { Input, on, off } from "./input.js";
+import { Input, on, off, MovementConsumer } from "./input.js";
 
 export class GamePadManager {
   static SINGLETON: GamePadManager;
@@ -57,7 +57,7 @@ export class GamePadManager {
    * 
    * @param index 
    */
-  getGamepad (index: number = undefined): Gamepad {
+  getGamepad(index: number = undefined): Gamepad {
     if (!index || index < 0) {
       for (let gp of this.allGamepads) {
         if (gp && gp.connected) return gp;
@@ -66,10 +66,10 @@ export class GamePadManager {
       return this.allGamepads[index];
     }
   }
-  getButton (btn: number, index: number = -1): boolean {
+  getButton(btn: number, index: number = -1): boolean {
     return this.getGamepad(index).buttons[btn].pressed;
   }
-  getAxis (axis: number, index: number = -1): number {
+  getAxis(axis: number, index: number = -1): number {
     return this.getGamepad(index).axes[axis];
   }
 }
@@ -109,34 +109,66 @@ export interface AxisInfluence extends ButtonInfluence {
 
 export class Button {
   protected influences: Set<ButtonInfluence>;
-  constructor () {
+  constructor() {
     this.influences = new Set();
   }
-  addInfluence (info: AxisInfluence): this {
+  addInfluence(info: ButtonInfluence): this {
     this.influences.add(info);
     return this;
   }
-  test (input: GameInput): boolean {
+  test(input: GameInput): boolean {
     for (let inf of this.influences) {
-      for (let key of inf.keys) {
-        if (input.raw.getKey(key)) return true;
+      if (inf.keys) {
+        for (let key of inf.keys) {
+          if (input.raw.getKeyboardButton(key)) return true;
+        }
+      }
+      if (inf.gpButtons) {
+        for (let btn of inf.gpButtons) {
+          if (input.gamePadManager.getButton(btn, inf.gamepad)) return true;
+        }
+      }
+      if (inf.mouseButtons) {
+        for (let btn of inf.mouseButtons) {
+          if (input.raw.getPointerButton(btn)) return true;
+        }
       }
 
-      // inf.gamepad
-      for (let btn of inf.gpButtons) {
-        if (input.gamePadManager.getButton(btn, inf.gamepad)) return true;
+      //I admit this is a weird way to do a button
+      if (inf.mouseAxes) {
+        let largest = 0;
+        let current = 0;
+        for (let axis of inf.mouseAxes) {
+          switch (axis) {
+            case 0:
+              current = input.builtinMovementConsumer.getDeltaX();
+              break;
+            case 1:
+              current = input.builtinMovementConsumer.getDeltaY();
+              break;
+            default:
+              break;
+            // case 2: //TODO - maybe add mouse wheel here?
+            //   current = input.builtinMovementConsumer.getDeltaX();
+            //   break;
+          }
+          if (Math.abs(current) > Math.abs(largest)) {
+            largest = current;
+          }
+        }
+        if (largest !== 0) return true;
       }
-      // for (let btn of inf.mouseButtons) {
-      //   // if (input.raw.pointer.)
-      //   //TODO - implement multiple buttons
-      // }
-
-      //TODO - implement axis rules
-      // inf.gpAxes
-      // inf.gamepad
-
-      //TODO - implement axis rules
-      // inf.mouseAxes
+      if (inf.gpAxes) {
+        let largest = 0;
+        let current = 0;
+        for (let axis of inf.gpAxes) {
+          current = input.gamePadManager.getAxis(axis, inf.gamepad);
+          if (Math.abs(current) > Math.abs(largest)) {
+            largest = current;
+          }
+        }
+        if (largest !== 0) return true;
+      }
     }
     return false;
   }
@@ -144,36 +176,72 @@ export class Button {
 
 export class Axis {
   protected influences: Set<AxisInfluence>;
-  constructor () {
+  constructor() {
     this.influences = new Set();
   }
-  addInfluence (info: AxisInfluence): this {
+  addInfluence(info: AxisInfluence): this {
     this.influences.add(info);
     return this;
   }
-  test (input: GameInput): number {
+  test(input: GameInput): number {
     for (let inf of this.influences) {
-      for (let key of inf.keys) {
-        if (input.raw.getKey(key)) {
-          return inf.value;
+      if (inf.keys) {
+        for (let key of inf.keys) {
+          if (input.raw.getKeyboardButton(key)) {
+            return inf.value;
+          }
         }
       }
-      for (let btn of inf.gpButtons) {
-        if (input.gamePadManager.getButton(btn, inf.gamepad)) {
-          return inf.value;
+      if (inf.mouseButtons) {
+        for (let btn of inf.mouseButtons) {
+          if (input.raw.getPointerButton(btn)) {
+            return inf.value;
+          }
         }
       }
-      let largest = 0;
-      let current = 0;
-      for (let axis of inf.gpAxes) {
-        current = input.gamePadManager.getAxis(axis, inf.gamepad);
-        if (Math.abs(current) > Math.abs(largest)) {
-          largest = current;
+      if (inf.mouseAxes) {
+        let largest = 0;
+        let current = 0;
+        for (let axis of inf.mouseAxes) {
+          switch (axis) {
+            case 0:
+              current = input.builtinMovementConsumer.getDeltaX();
+              break;
+            case 1:
+              current = input.builtinMovementConsumer.getDeltaY();
+              break;
+            default:
+              break;
+            // case 2: //TODO - maybe add mouse wheel here?
+            //   current = input.builtinMovementConsumer.getDeltaX();
+            //   break;
+          }
+          if (Math.abs(current) > Math.abs(largest)) {
+            largest = current;
+          }
+        }
+        if (largest !== 0) return largest;
+      }
+      if (inf.gpButtons) {
+        for (let btn of inf.gpButtons) {
+          if (input.gamePadManager.getButton(btn, inf.gamepad)) {
+            return inf.value;
+          }
         }
       }
-
-      return current;
+      if (inf.gpAxes) {
+        let largest = 0;
+        let current = 0;
+        for (let axis of inf.gpAxes) {
+          current = input.gamePadManager.getAxis(axis, inf.gamepad);
+          if (Math.abs(current) > Math.abs(largest)) {
+            largest = current;
+          }
+        }
+        if (largest !== 0) return largest;
+      }
     }
+    return 0;
   }
 }
 
@@ -184,6 +252,7 @@ export class GameInput {
 
   protected axes: Map<string, Axis>;
   protected buttons: Map<string, Button>;
+  builtinMovementConsumer: MovementConsumer;
 
   constructor() {
     if (!GameInput.SINGLETON) {
@@ -193,6 +262,8 @@ export class GameInput {
     }
     this.raw = new Input();
     this.raw.registerEvents();
+
+    this.builtinMovementConsumer = this.raw.getMovementConsumer();
 
     this.axes = new Map();
     this.buttons = new Map();
@@ -207,11 +278,11 @@ export class GameInput {
     }
     return GameInput.SINGLETON;
   }
-  
+
   /**Checks if a axis name is already in use
    * @param name the unique name of the axis
    */
-  hasAxis (name: string): boolean {
+  hasAxis(name: string): boolean {
     return this.axes.has(name);
   }
   /**Create an axis to track
@@ -219,30 +290,30 @@ export class GameInput {
    * You can assign any input to an axis, including keyboard, mouse, gamepad, and UI
    * @param name a unique name for the axis
    */
-  createAxis (name: string): Axis {
+  createAxis(name: string): Axis {
     if (this.hasAxis(name)) throw `Already have an axis by name of "${name}" !`;
     const result = new Axis();
     this.axes.set(name, result);
     return result;
   }
-  getAxis (name: string): Axis {
+  getAxis(name: string): Axis {
     return this.axes.get(name);
   }
   /**Get the current value of an axis input
    * @param name the unique name of the axis input
    */
-  getAxisValue (name: string): number {
+  getAxisValue(name: string): number {
     return this.getAxis(name).test(this);
   }
-  deleteAxis (name: string): this {
+  deleteAxis(name: string): this {
     this.axes.delete(name);
     return this;
   }
 
-  hasButton (name: string): boolean {
+  hasButton(name: string): boolean {
     return this.buttons.has(name);
   }
-  createButton (name: string): Button {
+  createButton(name: string): Button {
     if (this.hasButton(name)) throw `Button name "${name}" already in use`;
     const result = new Button();
     this.buttons.set(name, result);
@@ -251,10 +322,10 @@ export class GameInput {
   getButton(name: string): Button {
     return this.buttons.get(name);
   }
-  getButtonValue (name: string): boolean {
+  getButtonValue(name: string): boolean {
     return this.getButton(name).test(this);
   }
-  deleteButton (name: string): this {
+  deleteButton(name: string): this {
     this.buttons.delete(name);
     return this;
   }

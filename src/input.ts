@@ -1,35 +1,53 @@
 
 /**Listen to events on an element*/
-export const on = (elem: HTMLElement|Window, type: string, callback: EventListener|any, options: any|undefined = undefined) => {
+export const on = (elem: HTMLElement | Window, type: string, callback: EventListener | any, options: any | undefined = undefined) => {
   if (!elem) throw "No element supplied";
   elem.addEventListener(type, callback, options);
 }
 
 /**Stop listen to events on an element*/
-export const off = (elem: HTMLElement|Window, type: string, callback: EventListener) => {
+export const off = (elem: HTMLElement | Window, type: string, callback: EventListener | any) => {
   if (!elem) throw "No element supplied";
   elem.removeEventListener(type, callback);
 }
 
-export interface InputPointerState {
-  x: number;
-  y: number;
-  lx: number;
-  ly: number;
-  leftDown: boolean;
-  rightDown: boolean;
-  locked: boolean;
-  mx: number;
-  my: number;
-}
+export class MovementConsumer {
+  private deltaX: number;
+  private deltaY: number;
+  //TODO - possibly add mouse wheel here?
 
-interface InputEventCallback {
-  (type: string)
+  constructor() {
+    this.deltaX = 0;
+    this.deltaY = 0;
+  }
+  setDelta(x: number, y: number): this {
+    this.deltaX = x;
+    this.deltaY = y;
+    return this;
+  }
+  addDelta(x: number, y: number): this {
+    this.setDelta(x + this.deltaX, y + this.deltaY);
+    return this;
+  }
+  getDeltaX(): number {
+    let result = this.deltaX;
+    this.deltaX = 0;
+    return result;
+  }
+  getDeltaY(): number {
+    let result = this.deltaY;
+    this.deltaY = 0;
+    return result;
+  }
 }
 
 export class Input {
-  pointer: InputPointerState;
+  private mouseButtons: Map<number, boolean>;
+  private movementConsumers: Set<MovementConsumer>;
   private keyboard: Map<string, boolean>;
+  private pointerX: number;
+  private pointerY: number;
+
   onMouseMove: (evt: MouseEvent) => void;
   onTouchMove: (evt: TouchEvent) => void;
   onMouseDown: (evt: MouseEvent) => void;
@@ -40,128 +58,88 @@ export class Input {
   onKeyDown: (evt) => void;
   onKeyUp: (evt: KeyboardEvent) => void;
   onContextMenu: (evt: Event) => void;
-  private listeners: Set<InputEventCallback>;
-  pointerLockElement: HTMLCanvasElement;
-  pointerLockChange: (e: Event) => void;
 
   constructor() {
-    this.pointer = {
-      x: 0,
-      y: 0,
-      lx: 0,
-      ly: 0,
-      leftDown: false,
-      rightDown: false,
-      locked: false,
-      mx: 0,
-      my: 0
-    };
+    this.mouseButtons = new Map();
+    this.pointerX = 0;
+    this.pointerY = 0;
 
     this.keyboard = new Map<string, boolean>();
+    this.movementConsumers = new Set();
 
     this.onMouseMove = (evt) => {
       if (evt.buttons > 0) {
-        if (evt.button === 0) {
-          this.pointer.leftDown = true;
-        } else if (evt.button === 2) {
-          this.pointer.rightDown = true;
-        }
+        this.setPointerButton(evt.button);
       }
-      this.setPointerXY(evt.clientX, evt.clientY);
-      this.setMovementXY(evt.movementX, evt.movementY);
-      this.onEvent("pointer-move");
+      this.setPointerPosition(evt.clientX, evt.clientY);
+      this.setPointerMovement(evt.movementX, evt.movementY);
     };
     this.onTouchMove = (evt: TouchEvent) => {
       let item = evt.changedTouches.item(0);
-      this.pointer.leftDown = true;
-      this.setPointerXY(item.clientX, item.clientY);
-      this.onEvent("pointer-move");
+      this.setPointerButton(0);
+      this.setPointerPosition(item.clientX, item.clientY);
     };
-
     this.onMouseDown = (evt: MouseEvent) => {
       evt.preventDefault();
-      this.setPointerXY(evt.clientX, evt.clientY);
-      if (evt.button === 0) {
-        this.pointer.leftDown = true;
-      } else if (evt.button === 2) {
-        this.pointer.rightDown = true;
-      }
-      this.onEvent("pointer-down");
+      this.setPointerPosition(evt.clientX, evt.clientY);
+
+      this.setPointerButton(evt.button);
     }
     this.onTouchStart = (evt: TouchEvent) => {
-      this.pointer.leftDown = true;
       let item = evt.changedTouches.item(0);
-      this.setPointerXY(item.clientX, item.clientY);
-      this.onEvent("pointer-down");
+      this.setPointerPosition(item.clientX, item.clientY);
+      this.setPointerButton(0);
     }
     this.onMouseUp = (evt: MouseEvent) => {
-      this.setPointerXY(evt.clientX, evt.clientY);
-      if (evt.button === 0) {
-        this.pointer.leftDown = false;
-      } else if (evt.button === 2) {
-        this.pointer.rightDown = false;
-      }
-      this.onEvent("pointer-up");
+      this.setPointerPosition(evt.clientX, evt.clientY);
+      this.setPointerButton(evt.button, false);
     }
     this.onTouchEnd = (evt: TouchEvent) => {
-      this.pointer.leftDown = false;
+      this.setPointerButton(0, false);
       let item = evt.changedTouches.item(0);
-      this.setPointerXY(item.clientX, item.clientY);
-      this.onEvent("pointer-up");
+      this.setPointerPosition(item.clientX, item.clientY);
     }
     this.onTouchCancel = (evt: TouchEvent) => {
-      this.pointer.leftDown = false;
+      this.setPointerButton(0, true);
       let item = evt.changedTouches.item(0);
-      this.setPointerXY(item.clientX, item.clientY);
-      this.onEvent("pointer-up");
+      this.setPointerPosition(item.clientX, item.clientY);
     }
-    /**@param {KeyboardEvent} evt*/
     this.onKeyDown = (evt) => {
       this.keyboard.set(evt.key, true);
-      this.onEvent("key-down");
     }
     this.onKeyUp = (evt: KeyboardEvent) => {
       this.keyboard.set(evt.key, false);
-      this.onEvent("key-up");
     }
     this.onContextMenu = (evt: Event) => {
       evt.preventDefault();
     }
-    this.listeners = new Set<InputEventCallback>();
-
-    this.pointerLockChange = (e: Event) => {
-      this.pointer.locked = document.pointerLockElement !== null;
+  }
+  getMovementConsumer(): MovementConsumer {
+    let result = new MovementConsumer();
+    this.movementConsumers.add(result);
+    return result;
+  }
+  setPointerButton(button: number, value: boolean = true): this {
+    this.mouseButtons.set(button, value);
+    return this;
+  }
+  getPointerButton(button: number): boolean {
+    return this.mouseButtons.get(button) == true;
+  }
+  setPointerMovement(x: number, y: number) {
+    for (let consumer of this.movementConsumers) {
+      consumer.addDelta(x, y);
     }
   }
-  setMovementXY(x: number, y: number) {
-    this.pointer.mx = x;
-    this.pointer.my = y;
+  setPointerPosition(x: number, y: number) {
+    this.pointerX = x;
+    this.pointerY = y;
   }
-  consumeMovementX(): number {
-    let result = this.pointer.mx;
-    this.pointer.mx = 0;
-    return result;
+  getPointerX(): number {
+    return this.pointerX;
   }
-  consumeMovementY(): number {
-    let result = this.pointer.my;
-    this.pointer.my = 0;
-    return result;
-  }
-  setPointerXY(x: number, y: number) {
-    this.pointer.lx = this.pointer.x;
-    this.pointer.ly = this.pointer.y;
-    this.pointer.x = x;
-    this.pointer.y = y;
-  }
-  listen(cb: InputEventCallback) {
-    if (!cb) throw "Callback cannot be " + cb;
-    if (this.listeners.has(cb)) throw "Cannot add same listener twice";
-    this.listeners.add(cb);
-  }
-  deafen(cb: InputEventCallback): boolean {
-    if (!this.listeners.has(cb)) return false;
-    this.listeners.delete(cb);
-    return true;
+  getPointerY(): number {
+    return this.pointerY;
   }
   unregisterEvents() {
     off(window, "mousemove", this.onMouseMove);
@@ -193,20 +171,16 @@ export class Input {
     on(window, "keydown", this.onKeyDown);
     on(window, "contextmenu", this.onContextMenu);
   }
-  onEvent(type: "key-up"|"key-down"|"pointer-up"|"pointer-down"|"pointer-move") {
-    for (let l of this.listeners) {
-      l(type);
-    }
+  pointerIsLocked(): boolean {
+    return (document.pointerLockElement != undefined && document.pointerLockElement != null);
   }
-  tryLock(canvas: HTMLCanvasElement) {
-    this.pointerLockElement = canvas;
-    document.addEventListener("pointerlockchange", (e) => this.pointerLockChange(e));
-    this.pointerLockElement.requestPointerLock();
+  pointerTryLock(canvas: HTMLCanvasElement) {
+    canvas.requestPointerLock();
   }
-  unlock() {
+  pointerUnlock() {
     document.exitPointerLock();
   }
-  getKey (key: string): boolean {
-    return this.keyboard.get(key) || false;
+  getKeyboardButton(key: string): boolean {
+    return this.keyboard.get(key) === true;
   }
 }

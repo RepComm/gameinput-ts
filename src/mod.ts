@@ -1,38 +1,20 @@
 
 import {
   Input,
-  InputPointerState,
   off,
   on
-} from "./input";
+} from "./input.js";
 
 import {
   GameInput,
-  GamePadManager,
-  AxisRule,
-  AxisRuleJson,
-  InputBinding,
-  InputBindingJson,
-  InputBindingsJson,
-  RendererInterface,
-  TouchRect,
-  TouchRectJson
-} from "./gameinput";
+  GamePadManager
+} from "./gameinput.js";
 
 export {
   Input,
-  InputPointerState,
   off,
   on,
 
   GameInput,
-  GamePadManager,
-  AxisRule,
-  AxisRuleJson,
-  InputBinding,
-  InputBindingJson,
-  InputBindingsJson,
-  RendererInterface,
-  TouchRect,
-  TouchRectJson
+  GamePadManager
 }

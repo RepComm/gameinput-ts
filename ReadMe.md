@@ -1,34 +1,27 @@
 # gameinput-ts
 Runtime re-mappable, reusable, procedural input that supports<br>
-controllers, keyboards, mice, and touch
+controllers, keyboards, mouse, touch, and UI
 
-All with an easy to use API for developers<br>
+This repo is being refactored to have a simpler, more complete API
 
-## Implemented Classes
-- InputBinding
-- GamePadManager
-- Input
-- GameInput
-- AxisRule
-- TouchRect
-## Implemented Interfaces
-- AxisRuleJson
-- TouchRectJson
-- InputPointerState
-- InputBindingJson
-- InputBindingsJson
-- RendererInterface
+The main idea:
+- Anything can be a button
+- Anything can be an axis
 
-## Features
-- import/export mappings to json
-- mapping keyboard, touch, mouse, and gamepads
-- runtime remapping
+Anything being:
+- keyboard buttons
+- mouse buttons
+- mouse axes
+- touch
+- gamepad buttons
+- gamepad axes
+- HTML elements
 
-## Future additions
-- Gamepad Axis value caching
-- Touch, mouse, and (optional) axis mapping to movement xy
-- Standardized pointer movement cache
-- Persistent sensitivity for axis and pointer
+## Classes
+- Input (raw, used by GameInput)
+- GameInput - main API
+- Button
+- Axis
 
 ## Using
 To install with npm run<br>`npm install @repcomm/gameinput-ts`<br><br>
@@ -40,41 +33,20 @@ This package comes with typescript definitions, and should work in both typescri
 ## Example Usage
 ```js
 import { GameInput } from "@repcomm/gameinput-ts";
+// import { GameInput } from "./mod";
 
 let input = GameInput.get();
 
-//Create a jump control
-input.createBinding("jump")
-//see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
-//https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
-.addKeys("w", "up", " ")
-//add some buttons (you can use https://gamepad-tester.com/)
-.addPadButtons(0, 1, 2)
-//add an axis rule
-.createPadAxisRule(0, AxisRule.GREATER_THAN, 0.5)
+input.createAxis ("forward")
+.addInfluence ({
+  keys: ["w", "up"],
+  value: 1.0
+}).addInfluence ({
+  keys: ["s", "down"],
+  value: -1.0
+});
 
-//lock cursor to canvas
-input.raw.tryLock(myCanvas);
-
-//unlock from canvas
-input.raw.unlock();
-
-//game/app loop
-setInterval(()=>{
-  //test the button
-  if (input.getButton("jump")) {
-    console.log("^ boing! ^");
-  }
-
-  //touch / mouse is down
-  if (input.pointerPrimary) {
-
-  }
-
-  //mouse movement
-  let mx = input.raw.consumeMovementX();
-  let my = input.raw.consumeMovementY();
-}, 1000 / 15);
+input.getAxisValue ("forward");
 ```
 
 ## Compiling
