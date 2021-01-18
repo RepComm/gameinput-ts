@@ -7,6 +7,10 @@ export class GamePadManager {
 
   onGamePadConnected: (evt: GamepadEvent) => void;
   onGamePadDisconnected: (evt) => void;
+
+  /**Store this variable to reduce memory spam*/
+  private getGamepadTemp: Gamepad;
+
   constructor() {
     if (!GamePadManager.SINGLETON) {
       GamePadManager.SINGLETON = this;
@@ -51,9 +55,18 @@ export class GamePadManager {
   nativeGetAllGamepads(): Array<Gamepad> {
     return navigator.getGamepads();
   }
+  /**Returns true when this is at least one connected gamepad*/
+  hasGamepads (): boolean {
+    for (let gp of this.allGamepads) {
+      if (gp && gp.connected) return true;
+    }
+    return false;
+  }
   /**Get a gamepad
    * 
    * When an index is undefined, or negative, the first non-falsy gamepad is returned
+   * 
+   * If no gamepads available, return will be falsy (undefined)
    * 
    * @param index 
    */
@@ -66,11 +79,33 @@ export class GamePadManager {
       return this.allGamepads[index];
     }
   }
+  /**Get a gamepad button
+   * 
+   * If index is not specified, the first available gamepad will be used
+   * 
+   * If no gamepads available, result will be false
+   * 
+   * @param btn 
+   * @param index 
+   */
   getButton(btn: number, index: number = -1): boolean {
-    return this.getGamepad(index).buttons[btn].pressed;
+    this.getGamepadTemp = this.getGamepad(index);
+    if (this.getGamepadTemp) return this.getGamepadTemp.buttons[btn].pressed;
+    return false;
   }
+  /**Get a gamepad axis
+   * 
+   * If no index is specified, the first available gamepad will be used
+   * 
+   * If no gamepads available, return will be 0.0
+   * 
+   * @param axis 
+   * @param index 
+   */
   getAxis(axis: number, index: number = -1): number {
-    return this.getGamepad(index).axes[axis];
+    this.getGamepadTemp = this.getGamepad(index);
+    if (this.getGamepadTemp) return this.getGamepadTemp.axes[axis];
+    return 0;
   }
 }
 
@@ -108,7 +143,7 @@ export interface AxisInfluence extends ButtonInfluence {
 }
 
 export class Button {
-  protected influences: Set<ButtonInfluence>;
+  private influences: Set<ButtonInfluence>;
   constructor() {
     this.influences = new Set();
   }
@@ -175,7 +210,7 @@ export class Button {
 }
 
 export class Axis {
-  protected influences: Set<AxisInfluence>;
+  private influences: Set<AxisInfluence>;
   constructor() {
     this.influences = new Set();
   }
@@ -250,8 +285,8 @@ export class GameInput {
   raw: Input;
   gamePadManager: GamePadManager;
 
-  protected axes: Map<string, Axis>;
-  protected buttons: Map<string, Button>;
+  private axes: Map<string, Axis>;
+  private buttons: Map<string, Button>;
   builtinMovementConsumer: MovementConsumer;
 
   constructor() {
