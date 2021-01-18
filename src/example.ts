@@ -9,7 +9,9 @@ input.createAxis ("forward")
   keys: ["w", "ArrowUp"],
   value: 1.0,
   mouseButtons:[0],
-  mouseAxes:[0]
+  mouseAxes:[0],
+  gpAxisScale: 2,
+  pointerAxisScale: 0.5
 }).addInfluence ({
   keys: ["s", "ArrowDown"],
   value: -1.0

@@ -1,6 +1,6 @@
 {
   "name": "@repcomm/gameinput-ts",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "gameinput-ts",
   "main": "./lib/mod.js",
   "types": "./lib/mod.d.ts",

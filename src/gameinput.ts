@@ -140,6 +140,10 @@ export interface ButtonInfluence {
 export interface AxisInfluence extends ButtonInfluence {
   /**The value to apply when triggered */
   value: number;
+  /**Gamepad axes will scale their value by this, default is 1*/
+  gpAxisScale?: number;
+  /**Mouse axes will scale their value by this, default is 1*/
+  pointerAxisScale?: number;
 }
 
 export class Button {
@@ -215,6 +219,8 @@ export class Axis {
     this.influences = new Set();
   }
   addInfluence(info: AxisInfluence): this {
+    if (!info.gpAxisScale) info.gpAxisScale = 1;
+    if (!info.pointerAxisScale) info.pointerAxisScale = 1;
     this.influences.add(info);
     return this;
   }
@@ -255,7 +261,7 @@ export class Axis {
             largest = current;
           }
         }
-        if (largest !== 0) return largest;
+        if (largest !== 0) return largest * inf.pointerAxisScale;
       }
       if (inf.gpButtons) {
         for (let btn of inf.gpButtons) {
@@ -273,7 +279,7 @@ export class Axis {
             largest = current;
           }
         }
-        if (largest !== 0) return largest;
+        if (largest !== 0) return largest * inf.gpAxisScale;
       }
     }
     return 0;
