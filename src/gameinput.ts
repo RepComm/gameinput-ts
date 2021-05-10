@@ -155,6 +155,22 @@ export class Button {
     this.influences.add(info);
     return this;
   }
+  removeInfluence (info: ButtonInfluence): this {
+    this.influences.delete(info);
+    return this;
+  }
+  hasInfluence (info: ButtonInfluence): boolean {
+    return this.influences.has(info);
+  }
+  getInfluences (): Array<ButtonInfluence> {
+    let result = new Array<ButtonInfluence>(this.influences.size);
+    let i=0;
+    for (let inf of this.influences) {
+      result[i] = inf;
+      i++;
+    }
+    return result;
+  }
   test(input: GameInput): boolean {
     for (let inf of this.influences) {
       if (inf.keys) {
@@ -223,6 +239,22 @@ export class Axis {
     if (!info.pointerAxisScale) info.pointerAxisScale = 1;
     this.influences.add(info);
     return this;
+  }
+  removeInfluence (info: AxisInfluence): this {
+    this.influences.delete(info);
+    return this;
+  }
+  hasInfluence (info: AxisInfluence): boolean {
+    return this.influences.has(info);
+  }
+  getInfluences (): Array<AxisInfluence> {
+    let result = new Array<AxisInfluence>(this.influences.size);
+    let i=0;
+    for (let inf of this.influences) {
+      result[i] = inf;
+      i++;
+    }
+    return result;
   }
   test(input: GameInput): number {
     for (let inf of this.influences) {
