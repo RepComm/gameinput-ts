@@ -320,6 +320,28 @@ export class GameInput {
     return GameInput.SINGLETON;
   }
 
+  /**Get a list of all known axes id's at current time*/
+  getAxes (): Array<string> {
+    let result = new Array<string>(this.axes.size);
+    let i = 0;
+    for (let key of this.axes.keys()) {
+      result[i] = key;
+      i++;
+    }
+    return result;
+  }
+
+  /**Get a list of all known button id's at current time*/
+  getButtons (): Array<string> {
+    let result = new Array<string>(this.buttons.size);
+    let i = 0;
+    for (let key of this.buttons.keys()) {
+      result[i] = key;
+      i++;
+    }
+    return result;
+  }
+
   /**Checks if a axis name is already in use
    * @param name the unique name of the axis
    */

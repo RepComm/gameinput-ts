@@ -2,19 +2,29 @@
 import {
   Input,
   off,
-  on
+  on,
+  MovementConsumer
 } from "./input.js";
 
 import {
   GameInput,
-  GamePadManager
+  GamePadManager,
+  Axis,
+  AxisInfluence,
+  Button,
+  ButtonInfluence
 } from "./gameinput.js";
 
 export {
   Input,
   off,
   on,
+  MovementConsumer,
 
   GameInput,
-  GamePadManager
+  GamePadManager,
+  Axis,
+  AxisInfluence,
+  Button,
+  ButtonInfluence
 }
