@@ -80,7 +80,7 @@ export class Input {
       this.setPointerPosition(item.clientX, item.clientY);
     };
     this.onMouseDown = (evt: MouseEvent) => {
-      evt.preventDefault();
+      // evt.preventDefault();
       this.setPointerPosition(evt.clientX, evt.clientY);
 
       this.setPointerButton(evt.button);
@@ -111,7 +111,7 @@ export class Input {
       this.keyboard.set(evt.key, false);
     }
     this.onContextMenu = (evt: Event) => {
-      evt.preventDefault();
+      // evt.preventDefault();
     }
   }
   getMovementConsumer(): MovementConsumer {
