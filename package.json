@@ -1,11 +1,11 @@
 {
   "name": "@repcomm/gameinput-ts",
-  "version": "1.10.2",
+  "version": "1.10.4",
   "description": "gameinput-ts",
-  "main": "./lib/mod.js",
-  "types": "./lib/mod.d.ts",
+  "main": "./docs/mod.js",
+  "types": "./docs/mod.d.ts",
   "files": [
-    "lib/**/*"
+    "docs/**/*"
   ],
   "repository": {
     "type": "git",
