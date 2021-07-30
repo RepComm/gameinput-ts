@@ -7,6 +7,7 @@ Runtime re-mappable procedural input for the web
 - mouse
 - touch
 - gamepad
+- importing JSON input mappings during runtime!
 
 # future-support
 - UI elements
@@ -52,49 +53,58 @@ import { GameInput } from "/path/to/gameinput/mod.js";
 
 ### Example Usage
 ```js
-//get the singleton
-let input = GameInput.get();
 
-//create an axis
-input.createAxis ("forward")
-.addInfluence ({
+//so we can use await
+async function main () {
   
-  //make it influenced by up and w keys
-  keys: ["w", "up"],
+  //get the singleton
+  let input = GameInput.get();
   
-  //value when triggered by boolean state (such as keys, mouse buttons, gamepad buttons)
-  value: 1.0,
+  //create an axis
+  input.getOrCreateAxis ("forward")
+  .addInfluence ({
+    //value when triggered by boolean state (such as keys, mouse buttons, gamepad buttons)
+    value: 1.0,
+    
+    //make it influenced by first mouse button
+    mouseButtons:[0],
+    
+    //you can also make it take on the value of the mouse axes
+    mouseAxes:[0],
+    //scale factor when activated by mouse/touch
+    pointerAxisScale: 0.5,
+    
+    //use gamepad axes!
+    gpAxes:[0],
+    //scale factor when activated by gamepad axes
+    gpAxisScale: 2,
+    //force use of specific connected gamepad
+    gpIndex: 0
+  });
+  
+  //You can also supply JSON!
+  const inputMapFile = "./demo.input.json";
+  console.log(`Fetching ${inputMapFile}`);
+  let config = await (await fetch( inputMapFile )).json();
 
-  //make it influenced by first mouse button
-  mouseButtons:[0],
+  //button and axis definitions will merge with pre-existing buttons and axes
+  input.addJsonConfig( config );
+  
+  //loop
+  let fps = 30;
+  setInterval (()=>{
+    //get the axis value
+    let fwd = input.getAxisValue ("forward");
+    
+    console.log(fwd);
+    
+  }, 1000/fps);
 
-  //you can also make it take on the value of the mouse axes
-  mouseAxes:[0],
-  //scale factor when activated by mouse/touch
-  pointerAxisScale: 0.5,
+}
 
-  //use gamepad axes!
-  gpAxes:[0],
-  //scale factor when activated by gamepad axes
-  gpAxisScale: 2,
-  //force use of specific connected gamepad
-  gpIndex: 0
-})
-//make it influenced by down and s keys
-.addInfluence ({
-  keys: ["s", "down"],
-  value: -1.0
-});
+main();
 
-//loop
-let fps = 30;
-setInterval (()=>{
-  //get the axis value
-  let fwd = input.getAxisValue ("forward");
 
-  console.log(fwd);
-
-}, 1000/fps);
 ```
 
 ## Compiling
