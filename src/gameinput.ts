@@ -130,7 +130,7 @@ export interface ButtonInfluence {
    */
   gpAxes?: Array<number>;
   /**Select for a specific gamepad index, default is undefined (any)*/
-  gamepad?: number;
+  gpIndex?: number;
   /**Apply specific mouse buttons*/
   mouseButtons?: Array<number>;
   /**Apply specific mouse axes*/
@@ -138,12 +138,17 @@ export interface ButtonInfluence {
 }
 
 export interface AxisInfluence extends ButtonInfluence {
-  /**The value to apply when triggered */
+  /**The value to apply when triggered by a button type*/
   value: number;
   /**Gamepad axes will scale their value by this, default is 1*/
   gpAxisScale?: number;
   /**Mouse axes will scale their value by this, default is 1*/
   pointerAxisScale?: number;
+}
+
+export interface ButtonJson {
+  id: string;
+  influences?: ButtonInfluence[];
 }
 
 export class Button {
@@ -180,7 +185,7 @@ export class Button {
       }
       if (inf.gpButtons) {
         for (let btn of inf.gpButtons) {
-          if (input.gamePadManager.getButton(btn, inf.gamepad)) return true;
+          if (input.gamePadManager.getButton(btn, inf.gpIndex)) return true;
         }
       }
       if (inf.mouseButtons) {
@@ -217,7 +222,7 @@ export class Button {
         let largest = 0;
         let current = 0;
         for (let axis of inf.gpAxes) {
-          current = input.gamePadManager.getAxis(axis, inf.gamepad);
+          current = input.gamePadManager.getAxis(axis, inf.gpIndex);
           if (Math.abs(current) > Math.abs(largest)) {
             largest = current;
           }
@@ -227,6 +232,10 @@ export class Button {
     }
     return false;
   }
+}
+
+export interface AxisJson extends ButtonJson {
+  influences: AxisInfluence[];
 }
 
 export class Axis {
@@ -297,7 +306,7 @@ export class Axis {
       }
       if (inf.gpButtons) {
         for (let btn of inf.gpButtons) {
-          if (input.gamePadManager.getButton(btn, inf.gamepad)) {
+          if (input.gamePadManager.getButton(btn, inf.gpIndex)) {
             return inf.value;
           }
         }
@@ -306,7 +315,7 @@ export class Axis {
         let largest = 0;
         let current = 0;
         for (let axis of inf.gpAxes) {
-          current = input.gamePadManager.getAxis(axis, inf.gamepad);
+          current = input.gamePadManager.getAxis(axis, inf.gpIndex);
           if (Math.abs(current) > Math.abs(largest)) {
             largest = current;
           }
@@ -316,6 +325,15 @@ export class Axis {
     }
     return 0;
   }
+}
+
+export interface GameInputJson {
+  /**User friendly name for the layout*/
+  name?: string;
+  /**Define all the buttons*/
+  buttons?: ButtonJson[];
+  /**Define all the axes*/
+  axes?: AxisJson[];
 }
 
 export class GameInput {
@@ -427,4 +445,65 @@ export class GameInput {
   getGamePadManager(): GamePadManager {
     return this.gamePadManager;
   }
+  getOrCreateButton (name: string): Button {
+    let result: Button;
+    if (!this.hasButton(name)) {
+      result = this.createButton(name);
+    } else {
+      result = this.getButton(name);
+    }
+    return result;
+  }
+  getOrCreateAxis (name: string): Axis {
+    let result: Axis;
+    if (!this.hasButton(name)) {
+      result = this.createAxis(name);
+    } else {
+      result = this.getAxis(name);
+    }
+    return result;
+  }
+  /**Create all the buttons and axes you want with JSON!*/
+  addJsonConfig (config: GameInputJson): this {
+    // config.name
+
+    if (config.buttons) {
+      //loop all button declarations
+      for (let btnCfg of config.buttons) {
+
+        //no need to add if no influences
+        if (!btnCfg.influences) continue;
+        
+        //get or create the button
+        let btn = this.getOrCreateButton(btnCfg.id);
+
+        //add all influences
+        for (let infCfg of btnCfg.influences) {
+          btn.addInfluence(infCfg);
+        }
+      }
+
+    }
+
+    if (config.axes) {
+      //loop all axes declarations
+      for (let axisCfg of config.axes) {
+
+        //no need to add if no influences
+        if (!axisCfg.influences) continue;
+        
+        //get or create the axis
+        let axis = this.getOrCreateAxis(axisCfg.id);
+
+        //add all influences
+        for (let infCfg of axisCfg.influences) {
+          axis.addInfluence(infCfg);
+        }
+      }
+
+    }
+
+    return this;
+  }
+
 }

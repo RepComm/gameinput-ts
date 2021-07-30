@@ -71,14 +71,14 @@ input.createAxis ("forward")
   //you can also make it take on the value of the mouse axes
   mouseAxes:[0],
   //scale factor when activated by mouse/touch
-  pointerAxisScale: 0.5
+  pointerAxisScale: 0.5,
 
   //use gamepad axes!
   gpAxes:[0],
   //scale factor when activated by gamepad axes
   gpAxisScale: 2,
   //force use of specific connected gamepad
-  gamepad: 0
+  gpIndex: 0
 })
 //make it influenced by down and s keys
 .addInfluence ({
