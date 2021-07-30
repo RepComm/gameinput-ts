@@ -6,7 +6,7 @@
     "declaration": true,
     "allowJs": true,
     "emitDeclarationOnly": true,
-    "outDir": "lib"
+    "outDir": "docs"
   },
   "include": [
     "src/**/*"
