@@ -1,9 +1,18 @@
+
 # gameinput-ts
-Runtime re-mappable, reusable, procedural input that supports<br>
-controllers, keyboards, mouse, touch, and UI
+Runtime re-mappable procedural input for the web
 
-This repo is being refactored to have a simpler, more complete API
+# current-support
+- keyboard
+- mouse
+- touch
+- gamepad
 
+# future-support
+- UI elements
+- WebSocket API
+
+# how it works
 The main idea:
 - Anything can be a button
 - Anything can be an axis
@@ -18,57 +27,81 @@ Anything being:
 - HTML elements
 
 ## Classes
-- Input (raw, used by GameInput)
+- Input (raw, hooks into browser APIs, used by GameInput)
 - GameInput - main API
-- Button
-- Axis
+- Button - unique names, boolean state
+- Axis - unique names, floating point state
 
 ## Using
-To install with npm run<br>`npm install @repcomm/gameinput-ts`<br><br>
-and `import { GameInput } from "@repcomm/gameinput-ts";`<br><br>
-If you need to import without npm, you want to import the `mod.js` file
-
-This package comes with typescript definitions, and should work in both typescript and javascript.
-
-## Example Usage
-```js
+### Installing
+- Via NPM (usage with webpack or snowpack, which are tested)
+<br>
+```
+npm install @repcomm/gameinput-ts
+```
+```ts
 import { GameInput } from "@repcomm/gameinput-ts";
-// import { GameInput } from "./mod";
+```
+- Browser ESM script:
+<br>
+```js
+<script type="module">
+import { GameInput } from "/path/to/gameinput/mod.js";
+</script>
+```
 
+### Example Usage
+```js
+//get the singleton
 let input = GameInput.get();
 
+//create an axis
 input.createAxis ("forward")
 .addInfluence ({
+  
+  //make it influenced by up and w keys
   keys: ["w", "up"],
-  value: 1.0
-}).addInfluence ({
+  
+  //value when triggered by boolean state (such as keys, mouse buttons, gamepad buttons)
+  value: 1.0,
+
+  //make it influenced by first mouse button
+  mouseButtons:[0],
+
+  //you can also make it take on the value of the mouse axes
+  mouseAxes:[0],
+  //scale factor when activated by mouse/touch
+  pointerAxisScale: 0.5
+
+  //use gamepad axes!
+  gpAxes:[0],
+  //scale factor when activated by gamepad axes
+  gpAxisScale: 2,
+  //force use of specific connected gamepad
+  gamepad: 0
+})
+//make it influenced by down and s keys
+.addInfluence ({
   keys: ["s", "down"],
   value: -1.0
 });
 
-input.getAxisValue ("forward");
+//loop
+let fps = 30;
+setInterval (()=>{
+  //get the axis value
+  let fwd = input.getAxisValue ("forward");
+
+  console.log(fwd);
+
+}, 1000/fps);
 ```
 
 ## Compiling
-TS -> JS is done using babel.js<br>
-You can check out [ts-esm-babel-template](https://github.com/RepComm/ts-esm-babel-template)<br>
-Which shows esmodule + typescript w/ babel -> js output<br><br>
-
-or [webpack-ts-template](https://github.com/RepComm/webpack-ts-template) <br>
-Which shows esmodule + typescript w/ babel + npm package integration<br>
-<br>
-
 To build you'll want to clone the repo<br>
 `git clone https://github.com/RepComm/gameinput-ts.git`
 
-Run `npm install` to get dependencies
-
-Run `build.sh` (note: runs `npm run build`)
-for compiling to javascript
-
-----
-
-For compiling ts defs you'll need [typescript](https://www.npmjs.com/package/typescript)<br>
-Run `npm install -g typescript`
-
-Run `build-types.sh`
+## Install dev dependencies
+`npm install`
+## Build
+`npm run build`

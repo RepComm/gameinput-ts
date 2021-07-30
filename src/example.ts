@@ -11,7 +11,9 @@ input.createAxis ("forward")
   mouseButtons:[0],
   mouseAxes:[0],
   gpAxisScale: 2,
-  pointerAxisScale: 0.5
+  pointerAxisScale: 0.5,
+  gpAxes:[0],
+  gamepad:1
 }).addInfluence ({
   keys: ["s", "ArrowDown"],
   value: -1.0

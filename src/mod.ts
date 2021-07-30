@@ -10,9 +10,7 @@ import {
   GameInput,
   GamePadManager,
   Axis,
-  AxisInfluence,
   Button,
-  ButtonInfluence
 } from "./gameinput.js";
 
 export {
@@ -24,7 +22,5 @@ export {
   GameInput,
   GamePadManager,
   Axis,
-  AxisInfluence,
-  Button,
-  ButtonInfluence
+  Button
 }
